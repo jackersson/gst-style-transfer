@@ -46,7 +46,7 @@ class GstPipeline(object):
         """
         self._bus = self._pipeline.get_bus()  
         self._bus.add_signal_watch()
-        self._bus.connect("message", self._bus_call, None)
+        # self._bus.connect("message", self._bus_call, None)
     
     @staticmethod
     def create_element(self, name):
@@ -86,24 +86,3 @@ class GstPipeline(object):
     def pipeline(self):
         return self._pipeline
     
-    def _bus_call(self, bus, message, loop):
-        mtype = message.type
-
-        """
-            Gstreamer Message Types and how to parse
-            https://lazka.github.io/pgi-docs/Gst-1.0/flags.html#Gst.MessageType
-        """
-        if mtype == Gst.MessageType.EOS:
-            self.stop()
-            
-        elif mtype == Gst.MessageType.ERROR:
-            err, debug = message.parse_error()
-            logging.error("{0}: {1}".format(err, debug))      
-            self.stop()                  
-
-        elif mtype == Gst.MessageType.WARNING:
-            err, debug = message.parse_warning()
-            logging.warning("{0}: {1}".format(err, debug))             
-            
-        return True   
-

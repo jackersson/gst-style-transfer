@@ -1,6 +1,7 @@
 import timeit
 import numpy as np
 import cv2
+import logging
 
 import gi
 gi.require_version('Gst', '1.0')
@@ -11,15 +12,11 @@ from .gst_hacks import map_gst_buffer, get_buffer_size
 from .cv_utils import gaussian_blur
 
 
-GST_BLUR_FILTER = 'gstblurfilter'
+GST_BLUR_FILTER = 'gststyletransfer'
 
-
-def _write(message, filename, mode):
-    with open(filename, mode) as handle:
-        handle.write(message) 
 
 # https://lazka.github.io/pgi-docs/GstBase-1.0/classes/BaseTransform.html
-class GstBlurFilter(GstBase.BaseTransform):
+class GstStyleTransfer(GstBase.BaseTransform):
 
     CHANNELS = 3  # RGB 
 
@@ -38,7 +35,17 @@ class GstBlurFilter(GstBase.BaseTransform):
                                             Gst.Caps.from_string("video/x-raw,format=RGB")))
     
     def __init__(self):
-        super(GstBlurFilter, self).__init__()  
+        super(GstStyleTransfer, self).__init__()  
+
+        self._model = None
+
+    # TODO make @property
+    # Property to store model
+    def model(self):
+        return self._model
+
+    def set_model(self, value):
+        self._model = value
 
     def do_transform(self, inbuffer, outbuffer):
         """
@@ -49,6 +56,10 @@ class GstBlurFilter(GstBase.BaseTransform):
             Read more:
             https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gstreamer-libs/html/GstBaseTransform.html
         """
+
+        if self._model is None:
+            logging.error("Model can't be none")
+            return Gst.FlowReturn.OK
 
         success, (width, height) = get_buffer_size(self.srcpad.get_current_caps())
         if not success:
@@ -61,7 +72,7 @@ class GstBlurFilter(GstBase.BaseTransform):
         # YOUR IMAGE PROCESSING FUNCTION
         # BEGIN
 
-        frame = gaussian_blur(frame, 25, sigma=(10, 10))
+        frame = self._model.process(frame)
 
         # END
 
