@@ -4,6 +4,8 @@ import logging
 import traceback
 import argparse 
 
+from app import App
+
 # Set logging level=DEBUG
 logging.basicConfig(level=0)
 
@@ -20,5 +22,5 @@ if not os.path.isfile(file_name):
 
 style = args['style']
 
-app = App({"filename": 'video.mpg'})
+app = App({"filename": file_name})
 app.start()

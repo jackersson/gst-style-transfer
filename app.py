@@ -6,10 +6,12 @@ import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
 
-from gst-style-transfer.gstpipeline import GstPipeline
-
 GObject.threads_init()
 Gst.init(None)
+
+from gst_style_transfer.gstpipeline import GstPipeline
+from gst_style_transfer.gststyletransfer import GST_STYLE_TRANSFER
+from gst_style_transfer.style_transfer_model import StyleTransferModel
 
 logging.info("Gstreamer initialized successfully.")
 
@@ -22,15 +24,15 @@ class StyleTransferPipeline(GstPipeline):
         command = 'filesrc location={} ! '.format(src)
         command += 'decodebin ! '
         command += 'videoconvert ! '
-        command += 'gststyletransfer name={}! '.format(style_transfer_plugin_name)
+        command += '{} name={} ! '.format(GST_STYLE_TRANSFER, style_transfer_plugin_name)
         command += 'videoconvert ! '
         command += 'gtksink '
 
         super(StyleTransferPipeline, self).__init__(command)
-
+        print(command)
         # Get element from pipeline by name
         # https://lazka.github.io/pgi-docs/Gst-1.0/classes/Bin.html#Gst.Bin.get_by_name
-        ret, element = pipeline.get_element(style_transfer_plugin_name)
+        ret, element = self.get_element(style_transfer_plugin_name)
         if not ret:
             raise ValueError("Invalid type")
 
@@ -54,7 +56,7 @@ class App(object):
         self._active = False
         self._loop = GObject.MainLoop()
 
-        self._pipeline = StyleTransferPipeline(src='video.mpg')
+        self._pipeline = StyleTransferPipeline(src=config['filename'])
         # Connect to pipeline messages (Catch EOS, STOP)
         self._pipeline.bus().connect("message", self._on_message, None)
 
